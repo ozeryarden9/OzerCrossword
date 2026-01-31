@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>תשבץ משפחתי | Family Crossword</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&family=Heebo:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Error Notifications Container -->
+    <div id="error-notifications"></div>
+    
+    <!-- Connection Status -->
+    <div id="connection-status" class="offline-banner hidden">
+        <span class="status-icon">⚠️</span>
+        <span class="status-text">אין חיבור לאינטרנט - השינויים יישמרו כשהחיבור יחזור</span>
+    </div>
+
+    <!-- Main Container -->
+    <div id="app">
+        <!-- Home Screen -->
+        <div id="home-screen" class="screen active">
+            <div class="home-container">
+                <div class="home-header">
+                    <h1 class="main-title">תשבץ משפחתי</h1>
+                    <p class="subtitle">פתרו תשבצים ביחד, בזמן אמת</p>
+                </div>
+
+                <div class="action-cards">
+                    <div class="action-card create-card" id="create-room-btn">
+                        <div class="card-icon">➕</div>
+                        <h2>צור חדר חדש</h2>
+                        <p>העלה תשבץ והתחל לפתור עם המשפחה</p>
+                    </div>
+
+                    <div class="action-card join-card" id="join-room-btn">
+                        <div class="card-icon">🚪</div>
+                        <h2>הצטרף לחדר</h2>
+                        <p>הזן קוד חדר והצטרף לתשבץ קיים</p>
+                    </div>
+                </div>
+
+                <div class="settings-card" id="settings-btn">
+                    <div class="card-icon">⚙️</div>
+                    <h2>הגדרות רשת</h2>
+                    <p>הגדר את גודל וצורת הרשת</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Room Screen -->
+        <div id="create-screen" class="screen">
+            <div class="screen-container">
+                <button class="back-btn" id="back-from-create">← חזור</button>
+                
+                <h1 class="screen-title">צור חדר חדש</h1>
+                
+                <div class="upload-section">
+                    <div class="upload-area" id="upload-area">
+                        <div class="upload-icon">📸</div>
+                        <p class="upload-text">גרור תמונת תשבץ או לחץ להעלאה</p>
+                        <p class="upload-hint">PNG, JPG עד 5MB</p>
+                        <input type="file" id="crossword-upload" accept="image/png,image/jpeg,image/jpg" hidden>
+                    </div>
+                    
+                    <div id="preview-container" class="preview-container hidden">
+                        <img id="crossword-preview" alt="תצוגה מקדימה">
+                        <button class="remove-image-btn" id="remove-image">✕</button>
+                    </div>
+                </div>
+
+                <button class="primary-btn" id="create-room-submit" disabled>
+                    צור חדר ותתחיל לפתור
+                </button>
+            </div>
+        </div>
+
+        <!-- Join Room Screen -->
+        <div id="join-screen" class="screen">
+            <div class="screen-container">
+                <button class="back-btn" id="back-from-join">← חזור</button>
+                
+                <h1 class="screen-title">הצטרף לחדר</h1>
+                
+                <div class="join-form">
+                    <label for="room-code-input" class="input-label">קוד חדר</label>
+                    <input 
+                        type="text" 
+                        id="room-code-input" 
+                        class="room-code-input" 
+                        placeholder="הזן 6 תווים"
+                        maxlength="6"
+                        autocomplete="off">
+                    
+                    <button class="primary-btn" id="join-room-submit">
+                        הצטרף לחדר
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Screen -->
+        <div id="settings-screen" class="screen">
+            <div class="screen-container-wide">
+                <button class="back-btn" id="back-from-settings">← חזור</button>
+                
+                <h1 class="screen-title">הגדרות רשת</h1>
+                
+                <div class="settings-instructions">
+                    <p>📐 הגדר את הרשת פעם אחת - היא תשמש לכל התשבצים</p>
+                </div>
+
+                <div class="settings-form">
+                    <div class="settings-grid-layout">
+                        <div class="settings-controls">
+                            <div class="setting-group">
+                                <label for="grid-rows" class="input-label">מספר שורות</label>
+                                <input 
+                                    type="number" 
+                                    id="grid-rows" 
+                                    class="settings-input" 
+                                    min="5" 
+                                    max="25" 
+                                    value="15">
+                            </div>
+
+                            <div class="setting-group">
+                                <label for="grid-cols" class="input-label">מספר עמודות</label>
+                                <input 
+                                    type="number" 
+                                    id="grid-cols" 
+                                    class="settings-input" 
+                                    min="5" 
+                                    max="25" 
+                                    value="15">
+                            </div>
+
+                            <div class="setting-group">
+                                <label class="input-label">מיקום הרשת</label>
+                                <div class="position-controls">
+                                    <label>
+                                        <span>מימין (%):</span>
+                                        <input type="number" id="grid-right" class="settings-input-small" value="10" min="0" max="100">
+                                    </label>
+                                    <label>
+                                        <span>מלמעלה (%):</span>
+                                        <input type="number" id="grid-top" class="settings-input-small" value="10" min="0" max="100">
+                                    </label>
+                                    <label>
+                                        <span>רוחב (%):</span>
+                                        <input type="number" id="grid-width" class="settings-input-small" value="80" min="10" max="100">
+                                    </label>
+                                    <label>
+                                        <span>גובה (%):</span>
+                                        <input type="number" id="grid-height" class="settings-input-small" value="80" min="10" max="100">
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="setting-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="show-grid-lines">
+                                    <span>הצג קווי רשת (לצורך הגדרה)</span>
+                                </label>
+                            </div>
+
+                            <button class="primary-btn" id="save-settings">
+                                שמור הגדרות
+                            </button>
+
+                            <button class="secondary-btn" id="reset-grid">
+                                איפוס לברירת מחדל
+                            </button>
+
+                            <button class="secondary-btn" id="upload-template-image">
+                                העלה תמונה לדוגמה
+                            </button>
+                            <input type="file" id="template-image-upload" accept="image/png,image/jpeg,image/jpg" hidden>
+                        </div>
+
+                        <div class="settings-preview">
+                            <div class="preview-label">תצוגה מקדימה</div>
+                            <div id="grid-preview-container" class="grid-preview-container">
+                                <img id="grid-preview-image" src="" alt="העלה תמונה לדוגמה">
+                                <div id="grid-preview-overlay" class="grid-preview-overlay"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Crossword Room Screen -->
+        <div id="room-screen" class="screen">
+            <div class="room-header">
+                <button class="back-btn" id="back-from-room">← עזוב חדר</button>
+                <div class="room-info">
+                    <h2 class="room-title">חדר: <span id="room-id-display"></span></h2>
+                    <button class="copy-btn" id="copy-room-id" title="העתק קוד חדר">
+                        📋
+                    </button>
+                </div>
+                <div class="participants">
+                    <span class="participants-icon">👥</span>
+                    <span id="participants-count">1</span>
+                </div>
+            </div>
+
+            <div class="room-content">
+                <div class="crossword-area">
+                    <!-- Crossword image background -->
+                    <div id="crossword-image-container" class="crossword-image-container">
+                        <img id="crossword-image" alt="תשבץ">
+                    </div>
+                    
+                    <!-- Interactive grid overlay -->
+                    <div id="crossword-grid" class="crossword-grid"></div>
+                </div>
+
+                <!-- Hebrew Keyboard -->
+                <div id="hebrew-keyboard" class="hebrew-keyboard hidden">
+                    <div class="keyboard-header">
+                        <span id="keyboard-cell-info"></span>
+                        <button class="keyboard-close" id="keyboard-close">✕</button>
+                    </div>
+                    <div class="keyboard-keys">
+                        <!-- Hebrew letters -->
+                        <button class="key" data-char="א">א</button>
+                        <button class="key" data-char="ב">ב</button>
+                        <button class="key" data-char="ג">ג</button>
+                        <button class="key" data-char="ד">ד</button>
+                        <button class="key" data-char="ה">ה</button>
+                        <button class="key" data-char="ו">ו</button>
+                        <button class="key" data-char="ז">ז</button>
+                        <button class="key" data-char="ח">ח</button>
+                        <button class="key" data-char="ט">ט</button>
+                        <button class="key" data-char="י">י</button>
+                        <button class="key" data-char="כ">כ</button>
+                        <button class="key" data-char="ך">ך</button>
+                        <button class="key" data-char="ל">ל</button>
+                        <button class="key" data-char="מ">מ</button>
+                        <button class="key" data-char="ם">ם</button>
+                        <button class="key" data-char="נ">נ</button>
+                        <button class="key" data-char="ן">ן</button>
+                        <button class="key" data-char="ס">ס</button>
+                        <button class="key" data-char="ע">ע</button>
+                        <button class="key" data-char="פ">פ</button>
+                        <button class="key" data-char="ף">ף</button>
+                        <button class="key" data-char="צ">צ</button>
+                        <button class="key" data-char="ץ">ץ</button>
+                        <button class="key" data-char="ק">ק</button>
+                        <button class="key" data-char="ר">ר</button>
+                        <button class="key" data-char="ש">ש</button>
+                        <button class="key" data-char="ת">ת</button>
+                        <button class="key key-backspace" data-action="backspace">⌫</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
