@@ -648,8 +648,8 @@ class GridDetector {
                 const cellEndX = Math.min(Math.floor((col + 1) * cellSize), gray.cols);
                 const cellEndY = Math.min(Math.floor((row + 1) * cellSize), gray.rows);
                 
-                // Only check INNER 70% to avoid thick border lines
-                const margin = cellSize * 0.15; // 15% margin on each side
+                // Only check INNER area to avoid border lines (5% margin)
+                const margin = cellSize * 0.05; // Smaller margin - just avoid the border lines
                 const startX = Math.floor(cellStartX + margin);
                 const startY = Math.floor(cellStartY + margin);
                 const endX = Math.floor(cellEndX - margin);
@@ -673,8 +673,8 @@ class GridDetector {
                 // Calculate percentage of black pixels
                 const blackPercentage = totalPixelCount > 0 ? blackPixelCount / totalPixelCount : 0;
                 
-                // Cell is black if 60% or more of INNER pixels are black
-                const isBlack = blackPercentage >= 0.6; // Higher threshold for inner area
+                // Cell is black if 50% or more of inner pixels are black
+                const isBlack = blackPercentage >= 0.5;
                 
                 // Debug: log first few cells
                 if (row === 0 && col < 3) {
