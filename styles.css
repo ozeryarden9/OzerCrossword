@@ -1258,6 +1258,12 @@ body {
     box-shadow: inset 0 0 0 2px var(--primary-light);
 }
 
+.grid-cell.black-cell {
+    background: rgba(0, 0, 0, 0.8);
+    cursor: default;
+    pointer-events: none;
+}
+
 .grid-cell.has-letter {
     color: #2C3539;
 }

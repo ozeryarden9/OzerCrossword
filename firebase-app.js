@@ -624,16 +624,51 @@ class GridDetector {
     }
 
     detectBlackCells(warpedImage, gridSize) {
-        // Simply create all playable cells - no detection needed
+        // Convert to grayscale
+        const gray = new cv.Mat();
+        cv.cvtColor(warpedImage, gray, cv.COLOR_RGBA2GRAY, 0);
+        
+        const cellSize = warpedImage.rows / gridSize;
         const grid = [];
+        
+        // Use adaptive threshold - 50% of pixels must be black
+        const BLACK_THRESHOLD = 127; // Pixel values below this are considered black
+        const BLACK_PERCENTAGE_THRESHOLD = 0.5; // 50% of cell must be black
         
         for (let row = 0; row < gridSize; row++) {
             const gridRow = [];
             
             for (let col = 0; col < gridSize; col++) {
+                // Calculate cell boundaries
+                const startX = Math.floor(col * cellSize);
+                const startY = Math.floor(row * cellSize);
+                const endX = Math.min(Math.floor((col + 1) * cellSize), gray.cols);
+                const endY = Math.min(Math.floor((row + 1) * cellSize), gray.rows);
+                
+                // Count black vs white pixels in entire cell
+                let blackPixelCount = 0;
+                let totalPixelCount = 0;
+                
+                for (let y = startY; y < endY; y++) {
+                    for (let x = startX; x < endX; x++) {
+                        const pixelValue = gray.ucharPtr(y, x)[0];
+                        
+                        if (pixelValue < BLACK_THRESHOLD) {
+                            blackPixelCount++;
+                        }
+                        totalPixelCount++;
+                    }
+                }
+                
+                // Calculate percentage of black pixels
+                const blackPercentage = blackPixelCount / totalPixelCount;
+                
+                // Cell is black if 50% or more pixels are black
+                const isBlack = blackPercentage >= BLACK_PERCENTAGE_THRESHOLD;
+                
                 gridRow.push({
                     letter: '',
-                    isBlack: false, // All cells are playable
+                    isBlack: isBlack,
                     timestamp: null
                 });
             }
@@ -641,6 +676,7 @@ class GridDetector {
             grid.push(gridRow);
         }
         
+        gray.delete();
         return grid;
     }
 
@@ -754,7 +790,13 @@ class CrosswordGrid {
         cell.dataset.row = row;
         cell.dataset.col = col;
 
-        // Add letter display
+        if (cellData.isBlack) {
+            // Black/blocked cell
+            cell.classList.add('black-cell');
+            return cell;
+        }
+
+        // Playable white cell
         const letterSpan = document.createElement('span');
         letterSpan.className = 'cell-letter';
         letterSpan.textContent = cellData.letter;
@@ -1091,7 +1133,7 @@ class CrosswordGrid {
 
         // Set new active cell
         const cell = this.container.querySelector(`[data-row="${row}"][data-col="${col}"]`);
-        if (cell) {
+        if (cell && !cell.classList.contains('black-cell')) {
             cell.classList.add('active');
             this.activeCell = cell;
             
@@ -1139,21 +1181,25 @@ class CrosswordGrid {
         if (this.currentDirection === 'horizontal') {
             // Go right (col decreases)
             for (let c = col - 1; c >= 0; c--) {
+                if (this.grid[row][c].isBlack) break;
                 cells.push({r: row, c: c});
             }
             
             // Go left (col increases)
             for (let c = col + 1; c < this.cols; c++) {
+                if (this.grid[row][c].isBlack) break;
                 cells.push({r: row, c: c});
             }
         } else {
             // Go up
             for (let r = row - 1; r >= 0; r--) {
+                if (this.grid[r][col].isBlack) break;
                 cells.push({r: r, c: col});
             }
             
             // Go down
             for (let r = row + 1; r < this.rows; r++) {
+                if (this.grid[r][col].isBlack) break;
                 cells.push({r: r, c: col});
             }
         }
@@ -1201,23 +1247,35 @@ class CrosswordGrid {
     getNextCell(row, col) {
         if (this.currentDirection === 'horizontal') {
             // Move left (Hebrew direction: col increases)
-            if (col < this.cols - 1) {
-                return { row, col: col + 1 };
+            for (let c = col + 1; c < this.cols; c++) {
+                if (!this.grid[row][c].isBlack) {
+                    return { row, col: c };
+                }
             }
 
             // Wrap to next row (start from rightmost = col 0)
-            if (row < this.rows - 1) {
-                return { row: row + 1, col: 0 };
+            for (let r = row + 1; r < this.rows; r++) {
+                for (let c = 0; c < this.cols; c++) {
+                    if (!this.grid[r][c].isBlack) {
+                        return { row: r, col: c };
+                    }
+                }
             }
         } else {
             // Move down (vertical)
-            if (row < this.rows - 1) {
-                return { row: row + 1, col };
+            for (let r = row + 1; r < this.rows; r++) {
+                if (!this.grid[r][col].isBlack) {
+                    return { row: r, col };
+                }
             }
 
             // Wrap to next column
-            if (col < this.cols - 1) {
-                return { row: 0, col: col + 1 };
+            for (let c = col + 1; c < this.cols; c++) {
+                for (let r = 0; r < this.rows; r++) {
+                    if (!this.grid[r][c].isBlack) {
+                        return { row: r, col: c };
+                    }
+                }
             }
         }
 
@@ -1227,23 +1285,35 @@ class CrosswordGrid {
     getPreviousCell(row, col) {
         if (this.currentDirection === 'horizontal') {
             // Move right (Hebrew backward: col decreases)
-            if (col > 0) {
-                return { row, col: col - 1 };
+            for (let c = col - 1; c >= 0; c--) {
+                if (!this.grid[row][c].isBlack) {
+                    return { row, col: c };
+                }
             }
 
             // Wrap to previous row (start from leftmost = last col)
-            if (row > 0) {
-                return { row: row - 1, col: this.cols - 1 };
+            for (let r = row - 1; r >= 0; r--) {
+                for (let c = this.cols - 1; c >= 0; c--) {
+                    if (!this.grid[r][c].isBlack) {
+                        return { row: r, col: c };
+                    }
+                }
             }
         } else {
             // Move up (vertical)
-            if (row > 0) {
-                return { row: row - 1, col };
+            for (let r = row - 1; r >= 0; r--) {
+                if (!this.grid[r][col].isBlack) {
+                    return { row: r, col };
+                }
             }
 
             // Wrap to previous column
-            if (col > 0) {
-                return { row: this.rows - 1, col: col - 1 };
+            for (let c = col - 1; c >= 0; c--) {
+                for (let r = this.rows - 1; r >= 0; r--) {
+                    if (!this.grid[r][c].isBlack) {
+                        return { row: r, col: c };
+                    }
+                }
             }
         }
 
@@ -1769,6 +1839,14 @@ class CrosswordApp {
                 this.detectedGridData = result.gridData;
                 this.detectedGridSettings = result.gridSettings;
                 
+                // Count black cells
+                let blackCount = 0;
+                for (let row of result.gridData) {
+                    for (let cell of row) {
+                        if (cell.isBlack) blackCount++;
+                    }
+                }
+                
                 // Show success
                 detectionStatus.querySelector('.status-icon').textContent = '✅';
                 detectionStatus.querySelector('.status-text').textContent = 'הרשת זוהתה בהצלחה!';
@@ -1778,7 +1856,7 @@ class CrosswordApp {
                 }, 2000);
                 
                 document.getElementById('create-room-submit').disabled = false;
-                notifier.success('הרשת זוהתה - רשת 11×11 מוכנה!');
+                notifier.success(`זוהו ${121 - blackCount} תאים פעילים ו-${blackCount} תאים חסומים`);
             } else {
                 // Show error
                 detectionStatus.querySelector('.status-icon').textContent = '❌';
